@@ -101,6 +101,7 @@
         const chat = document.getElementById('chat-container');
         let bazaWiedzy = JSON.parse(localStorage.getItem('yoogpt_brain')) || {};
 
+        // Normalizacja do szukania w pamięci (usuwa ś, ć, pytajniki)
         function normalizuj(t) {
             if (!t) return "";
             return t.toLowerCase().trim()
@@ -127,10 +128,9 @@
                 setTimeout(() => {
                     let response = "";
 
-                    // 1. UCZENIE
+                    // 1. TRYB UCZENIA
                     if (nRaw.startsWith("ucz sie")) {
-                        const tresc = raw.includes(":") ? raw.substring(raw.indexOf(":") + 1) : raw.substring(7);
-                        const lekcje = tresc.split(";");
+                        const lekcje = raw.split(":")[1] ? raw.split(":")[1].split(";") : raw.substring(7).split(";");
                         let licznik = 0;
                         lekcje.forEach(l => {
                             if (l.includes("=")) {
@@ -143,29 +143,26 @@
                             }
                         });
                         localStorage.setItem('yoogpt_brain', JSON.stringify(bazaWiedzy));
-                        response = `Nauczyłem się ${licznik} nowych rzeczy!`;
+                        response = `Zrozumiałem wszystko! Nauczyłem się ${licznik} nowych rzeczy.`;
                     } 
-                    // 2. SPRAWDZANIE WIEDZY (NAUCZONE)
+                    // 2. CZY TO MATEMATYKA? (sprawdzamy ZANIM znormalizujemy znaki + - * /)
+                    else if (/^[0-9+\-*/().\s,]+$/.test(raw)) {
+                        try {
+                            const calculation = raw.replace(/,/g, '.');
+                            const result = eval(calculation);
+                            response = `To proste: **${result}**`;
+                        } catch (err) {
+                            response = "Coś nie tak z tym działaniem...";
+                        }
+                    }
+                    // 3. SZUKANIE W NAUCZONEJ PAMIĘCI
                     else if (bazaWiedzy[nRaw]) {
                         response = bazaWiedzy[nRaw];
                     }
-                    // 3. AUTOMATYCZNA MATEMATYKA (NOWOŚĆ!)
                     else {
-                        // Sprawdzamy czy tekst zawiera tylko liczby i znaki matematyczne (+, -, *, /, .)
-                        const mathRegex = /^[0-9+\-*/().\s]+$/;
-                        if (mathRegex.test(raw.replace(/,/g, '.'))) {
-                            try {
-                                // Zamieniamy przecinek na kropkę dla komputera
-                                const calculation = raw.replace(/,/g, '.');
-                                const result = eval(calculation);
-                                response = `Obliczyłem to! Wynik to: **${result}**`;
-                            } catch (err) {
-                                response = "To wygląda na matematykę, ale coś jest nie tak z działaniem.";
-                            }
-                        } else {
-                            response = "Nie znam jeszcze odpowiedzi na to pytanie. Naucz mnie!";
-                        }
+                        response = "Nie znam odpowiedzi. Naucz mnie: <b>ucz się: pytanie = odpowiedź</b>";
                     }
+
                     addMessage(response, false);
                 }, 400);
             }
