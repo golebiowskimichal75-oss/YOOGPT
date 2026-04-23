@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YOOGPT - Inteligentna AI z Pamięcią</title>
+    <title>YOOGPT - Masowe Uczenie</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #1a1a1b; /* Ciemny motyw jak w profesjonalnych AI */
+            background-color: #1a1a1b;
             color: white;
             margin: 0;
             display: flex;
@@ -22,7 +22,6 @@
             display: flex;
             flex-direction: column;
             height: 100%;
-            background-color: #1a1a1b;
         }
 
         #header {
@@ -47,16 +46,8 @@
             line-height: 1.5;
         }
 
-        .user-message {
-            background-color: #2b5278;
-            align-self: flex-end;
-        }
-
-        .ai-message {
-            background-color: #2f2f2f;
-            align-self: flex-start;
-            border: 1px solid #444;
-        }
+        .user-message { background-color: #2b5278; align-self: flex-end; }
+        .ai-message { background-color: #2f2f2f; align-self: flex-start; border: 1px solid #444; }
 
         #input-area {
             padding: 20px;
@@ -76,16 +67,7 @@
             outline: none;
         }
 
-        input:focus {
-            border-color: #4a90e2;
-        }
-
-        .system-info {
-            font-size: 0.8rem;
-            color: #888;
-            text-align: center;
-            margin-bottom: 5px;
-        }
+        .system-info { font-size: 0.8rem; color: #888; text-align: center; }
     </style>
 </head>
 <body>
@@ -93,22 +75,22 @@
     <div id="main-container">
         <div id="header">
             <h1>YOOGPT</h1>
-            <p class="system-info">Moja AI uczy się na stałe!</p>
+            <p class="system-info">Teraz możesz uczyć mnie wielu rzeczy naraz (użyj ; )</p>
         </div>
 
         <div id="chat-container">
             <div class="message ai-message">
-                <b>YOOGPT:</b> Cześć! Pamiętam wszystko, czego mnie nauczysz. <br>
-                Użyj formuły: <b>ucz się: [pytanie] = [odpowiedź]</b>
+                <b>YOOGPT:</b> Możesz uczyć mnie wielu rzeczy naraz!<br>
+                Przykład: <b>ucz się: cześć = hej; 1+1 = 2; pies = szczeka</b>
             </div>
         </div>
 
         <div id="input-area">
-            <input type="text" id="userInput" placeholder="Napisz coś lub naucz mnie...">
+            <input type="text" id="userInput" placeholder="Wpisz wiele komend oddzielonych średnikiem...">
         </div>
     </div>
 
-   <script>
+    <script>
         const input = document.getElementById('userInput');
         const chat = document.getElementById('chat-container');
 
@@ -118,14 +100,14 @@
             localStorage.setItem('yoogpt_brain', JSON.stringify(bazaWiedzy));
         }
 
-        // --- NOWA FUNKCJA: CZYSZCZENIE TEKSTU ---
         function normalizuj(tekst) {
+            if (!tekst) return "";
             return tekst
                 .toLowerCase()
                 .trim()
-                .replace(/[?.,!]/g, "") // Usuwa znaki interpunkcyjne
-                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Zamienia ą->a, ś->s itd.
-                .replace(/\s+/g, " "); // Zamienia podwójne spacje na pojedyncze
+                .replace(/[?.,!]/g, "")
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                .replace(/\s+/g, " ");
         }
 
         function addMessage(text, isUser) {
@@ -140,9 +122,7 @@
         input.addEventListener('keypress', function (e) {
             if (e.key === 'Enter' && input.value.trim() !== "") {
                 const rawText = input.value.trim();
-                
-                // Normalizujemy to, co wpisał użytkownik
-                const czystyTekst = normalizuj(rawText);
+                const textLower = rawText.toLowerCase();
                 
                 addMessage(rawText, true);
                 input.value = '';
@@ -150,25 +130,35 @@
                 setTimeout(() => {
                     let response;
 
-                    // LOGIKA UCZENIA (tu nie normalizujemy wszystkiego, żeby zachować znaki w odpowiedzi)
-                    if (czystyTekst.startsWith("ucz sie") && rawText.includes("=")) {
-                        const content = rawText.split(":")[1]; 
-                        const parts = content.split("=");
+                    // --- NOWA LOGIKA: MASOWE UCZENIE ---
+                    if (textLower.startsWith("ucz sie:")) {
+                        const wszystkoPoDwukropku = rawText.substring(rawText.indexOf(":") + 1);
+                        const lekcje = wszystkoPoDwukropku.split(";"); // Dzielimy po średniku
                         
-                        if (parts.length === 2) {
-                            // Pytanie zapisujemy w formie znormalizowanej (bez ogonków i pytajników)
-                            const q = normalizuj(parts[0]);
-                            const a = parts[1].trim();
-                            bazaWiedzy[q] = a;
+                        let licznik = 0;
+                        lekcje.forEach(lekcja => {
+                            const czesci = lekcja.split("=");
+                            if (czesci.length === 2) {
+                                const q = normalizuj(czesci[0]);
+                                const a = czesci[1].trim();
+                                if (q && a) {
+                                    bazaWiedzy[q] = a;
+                                    licznik++;
+                                }
+                            }
+                        });
+
+                        if (licznik > 0) {
                             saveMemory();
-                            response = `Zapamiętałem! Teraz zrozumiem pytanie "${q}" nawet z błędami i bez pytajnika.`;
+                            response = `Zakończyłem naukę! Zapamiętałem nowe informacje (${licznik}).`;
+                        } else {
+                            response = "Nie zrozumiałem formuły. Użyj: ucz się: pytanie1 = odp1; pytanie2 = odp2";
                         }
                     } 
-                    // SPRAWDZANIE WIEDZY (używamy znormalizowanego tekstu)
-                    else if (bazaWiedzy[czystyTekst]) {
-                        response = bazaWiedzy[czystyTekst];
+                    else if (bazaWiedzy[normalizuj(rawText)]) {
+                        response = bazaWiedzy[normalizuj(rawText)];
                     } 
-                    else if (czystyTekst === "wyczysc pamiec") {
+                    else if (normalizuj(rawText) === "wyczysc pamiec") {
                         bazaWiedzy = {};
                         localStorage.removeItem('yoogpt_brain');
                         response = "Pamięć wyczyszczona.";
