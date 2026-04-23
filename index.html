@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>YOOGPT - Twoja AI</title>
+    <style>
+        body { font-family: Arial; text-align: center; background: #f0f0f0; }
+        #chatbox { width: 300px; height: 400px; border: 1px solid #ccc; margin: 20px auto; background: white; padding: 10px; overflow-y: scroll; }
+        input { width: 250px; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>YOOGPT</h1>
+    <p>Moja AI, która się uczy!</p>
+    
+    <div id="chatbox"></div>
+    <input type="text" id="userInput" placeholder="Napisz coś do AI...">
+
+    <script>
+        const input = document.getElementById('userInput');
+        const chat = document.getElementById('chatbox');
+
+        // To jest bardzo prosta logika "uczącej się" AI w przeglądarce
+        const pamiec = {};
+
+        input.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                const text = input.value.toLowerCase();
+                chat.innerHTML += "<b>Ty:</b> " + text + "<br>";
+                
+                if (pamiec[text]) {
+                    chat.innerHTML += "<b>AI:</b> Już to znam! Moja ocena: " + pamiec[text] + "<br>";
+                } else {
+                    pamiec[text] = Math.random().toFixed(2);
+                    chat.innerHTML += "<b>AI:</b> Nauczone! Zapamiętałem nowe słowo.<br>";
+                }
+                
+                input.value = '';
+                chat.scrollTop = chat.scrollHeight;
+            }
+        });
+    </script>
+</body>
+</html>
