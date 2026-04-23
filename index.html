@@ -3,173 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YOOGPT - Masowe Uczenie</title>
+    <title>YOOGPT - Wersja Stabilna</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #1a1a1b;
-            color: white;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            height: 100vh;
-        }
-
-        #main-container {
-            width: 100%;
-            max-width: 800px;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-
-        #header {
-            padding: 20px;
-            text-align: center;
-            border-bottom: 1px solid #333;
-        }
-
-        #chat-container {
-            flex-grow: 1;
-            padding: 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .message {
-            padding: 12px 18px;
-            border-radius: 15px;
-            max-width: 80%;
-            line-height: 1.5;
-        }
-
+        body { font-family: sans-serif; background-color: #1a1a1b; color: white; display: flex; flex-direction: column; align-items: center; height: 100vh; margin: 0; }
+        #main-container { width: 100%; max-width: 800px; display: flex; flex-direction: column; height: 100%; }
+        #chat-container { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .message { padding: 12px; border-radius: 15px; max-width: 80%; }
         .user-message { background-color: #2b5278; align-self: flex-end; }
         .ai-message { background-color: #2f2f2f; align-self: flex-start; border: 1px solid #444; }
-
-        #input-area {
-            padding: 20px;
-            background-color: #1a1a1b;
-            display: flex;
-            justify-content: center;
-        }
-
-        input {
-            width: 100%;
-            padding: 14px 20px;
-            border: 1px solid #444;
-            border-radius: 30px;
-            background-color: #2f2f2f;
-            color: white;
-            font-size: 1rem;
-            outline: none;
-        }
-
-        .system-info { font-size: 0.8rem; color: #888; text-align: center; }
+        #input-area { padding: 20px; display: flex; }
+        input { width: 100%; padding: 15px; border-radius: 30px; border: 1px solid #444; background: #2f2f2f; color: white; outline: none; }
     </style>
 </head>
 <body>
-
     <div id="main-container">
-        <div id="header">
-            <h1>YOOGPT</h1>
-            <p class="system-info">Teraz możesz uczyć mnie wielu rzeczy naraz (użyj ; )</p>
-        </div>
-
         <div id="chat-container">
-            <div class="message ai-message">
-                <b>YOOGPT:</b> Możesz uczyć mnie wielu rzeczy naraz!<br>
-                Przykład: <b>ucz się: cześć = hej; 1+1 = 2; pies = szczeka</b>
-            </div>
+            <div class="message ai-message"><b>YOOGPT:</b> Cześć! System naprawiony. Spróbuj mnie teraz nauczyć kilku rzeczy naraz.</div>
         </div>
-
         <div id="input-area">
-            <input type="text" id="userInput" placeholder="Wpisz wiele komend oddzielonych średnikiem...">
+            <input type="text" id="userInput" placeholder="Wklej formułę uczenia...">
         </div>
     </div>
 
     <script>
         const input = document.getElementById('userInput');
         const chat = document.getElementById('chat-container');
-
         let bazaWiedzy = JSON.parse(localStorage.getItem('yoogpt_brain')) || {};
 
-        function saveMemory() {
-            localStorage.setItem('yoogpt_brain', JSON.stringify(bazaWiedzy));
+        function normalizuj(t) {
+            return t ? t.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[?.,!]/g, "") : "";
         }
 
-        function normalizuj(tekst) {
-            if (!tekst) return "";
-            return tekst
-                .toLowerCase()
-                .trim()
-                .replace(/[?.,!]/g, "")
-                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-                .replace(/\s+/g, " ");
-        }
-
-        function addMessage(text, isUser) {
-            const msgDiv = document.createElement('div');
-            msgDiv.classList.add('message');
-            msgDiv.classList.add(isUser ? 'user-message' : 'ai-message');
-            msgDiv.innerHTML = isUser ? `<b>Ty:</b> ${text}` : `<b>YOOGPT:</b> ${text}`;
-            chat.appendChild(msgDiv);
+        function addMessage(t, isUser) {
+            const m = document.createElement('div');
+            m.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
+            m.innerHTML = `<b>${isUser ? 'Ty' : 'YOOGPT'}:</b> ${t}`;
+            chat.appendChild(m);
             chat.scrollTop = chat.scrollHeight;
         }
 
         input.addEventListener('keypress', function (e) {
             if (e.key === 'Enter' && input.value.trim() !== "") {
-                const rawText = input.value.trim();
-                const textLower = rawText.toLowerCase();
-                
-                addMessage(rawText, true);
+                const raw = input.value.trim();
+                addMessage(raw, true);
                 input.value = '';
 
                 setTimeout(() => {
-                    let response;
+                    let response = "";
+                    const lowerRaw = raw.toLowerCase();
 
-                    // --- NOWA LOGIKA: MASOWE UCZENIE ---
-                    if (textLower.startsWith("ucz sie:")) {
-                        const wszystkoPoDwukropku = rawText.substring(rawText.indexOf(":") + 1);
-                        const lekcje = wszystkoPoDwukropku.split(";"); // Dzielimy po średniku
-                        
+                    if (lowerRaw.startsWith("ucz sie:")) {
+                        const lekcje = raw.substring(raw.indexOf(":") + 1).split(";");
                         let licznik = 0;
-                       // Bezpieczna wersja masowego uczenia
-lekcje.forEach(lekcja => {
-    if (lekcja.includes("=")) { // Sprawdzamy, czy w ogóle jest znak równości
-        const czesci = lekcja.split("=");
-        const q = normalizuj(czesci[0]);
-        const a = czesci[1] ? czesci[1].trim() : null; // Sprawdzamy, czy jest odpowiedź
-        
-        if (q && a) {
-            bazaWiedzy[q] = a;
-            licznik++;
-        }
-    }
-});
-                        if (licznik > 0) {
-                            saveMemory();
-                            response = `Zakończyłem naukę! Zapamiętałem nowe informacje (${licznik}).`;
-                        } else {
-                            response = "Nie zrozumiałem formuły. Użyj: ucz się: pytanie1 = odp1; pytanie2 = odp2";
-                        }
-                    } 
-                    else if (bazaWiedzy[normalizuj(rawText)]) {
-                        response = bazaWiedzy[normalizuj(rawText)];
-                    } 
-                    else if (normalizuj(rawText) === "wyczysc pamiec") {
-                        bazaWiedzy = {};
-                        localStorage.removeItem('yoogpt_brain');
-                        response = "Pamięć wyczyszczona.";
-                    }
-                    else {
-                        response = "Nie znam odpowiedzi. Naucz mnie: <b>ucz się: pytanie = odpowiedź</b>";
-                    }
 
+                        lekcje.forEach(l => {
+                            if (l.includes("=")) {
+                                const [p, o] = l.split("=");
+                                const p_norm = normalizuj(p);
+                                if (p_norm && o) {
+                                    bazaWiedzy[p_norm] = o.trim();
+                                    licznik++;
+                                }
+                            }
+                        });
+                        
+                        localStorage.setItem('yoogpt_brain', JSON.stringify(bazaWiedzy));
+                        response = `Nauczyłem się ${licznik} nowych rzeczy!`;
+                    } 
+                    else {
+                        const zapytywany = normalizuj(raw);
+                        response = bazaWiedzy[zapytywany] || "Nie znam odpowiedzi. Naucz mnie: ucz się: pytanie = odpowiedź";
+                    }
                     addMessage(response, false);
-                }, 500);
+                }, 300);
             }
         });
     </script>
