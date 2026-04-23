@@ -1,0 +1,2 @@
+# YOOGPT
+CHATGPT ale lepszy!!!
