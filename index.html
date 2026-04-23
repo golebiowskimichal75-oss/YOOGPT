@@ -104,9 +104,9 @@
         function normalizuj(t) {
             if (!t) return "";
             return t.toLowerCase().trim()
-                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // usuwa ą, ś, ć itd.
-                .replace(/[?.,!]/g, "") // usuwa znaki zapytania
-                .replace(/\s+/g, " "); // usuwa podwójne spacje
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                .replace(/[?.,!:]/g, "")
+                .replace(/\s+/g, " ");
         }
 
         function addMessage(t, isUser) {
@@ -117,43 +117,54 @@
             chat.scrollTop = chat.scrollHeight;
         }
 
-        // Pierwsza wiadomość powitalna
-        addMessage("System gotowy! Mam nagłówek i pamięć. Czego mnie dzisiaj nauczysz?", false);
-
         input.addEventListener('keypress', function (e) {
             if (e.key === 'Enter' && input.value.trim() !== "") {
                 const raw = input.value.trim();
+                const nRaw = normalizuj(raw);
                 addMessage(raw, true);
                 input.value = '';
 
                 setTimeout(() => {
                     let response = "";
-                    const nRaw = normalizuj(raw);
 
-                    // Rozpoznaje "ucz się:", "ucz sie:", "UCZ SIE"
+                    // 1. UCZENIE
                     if (nRaw.startsWith("ucz sie")) {
                         const tresc = raw.includes(":") ? raw.substring(raw.indexOf(":") + 1) : raw.substring(7);
                         const lekcje = tresc.split(";");
                         let licznik = 0;
-
                         lekcje.forEach(l => {
                             if (l.includes("=")) {
-                                const czesci = l.split("=");
-                                const p = normalizuj(czesci[0]);
-                                const o = czesci[1] ? czesci[1].trim() : "";
-                                if (p && o) {
-                                    bazaWiedzy[p] = o;
+                                const [p, o] = l.split("=");
+                                const p_norm = normalizuj(p);
+                                if (p_norm && o) {
+                                    bazaWiedzy[p_norm] = o.trim();
                                     licznik++;
                                 }
                             }
                         });
-                        
                         localStorage.setItem('yoogpt_brain', JSON.stringify(bazaWiedzy));
-                        response = `Zrozumiałem! Nauczyłem się ${licznik} nowych rzeczy. Będę o nich pamiętał!`;
+                        response = `Nauczyłem się ${licznik} nowych rzeczy!`;
                     } 
+                    // 2. SPRAWDZANIE WIEDZY (NAUCZONE)
+                    else if (bazaWiedzy[nRaw]) {
+                        response = bazaWiedzy[nRaw];
+                    }
+                    // 3. AUTOMATYCZNA MATEMATYKA (NOWOŚĆ!)
                     else {
-                        const klucz = normalizuj(raw);
-                        response = bazaWiedzy[klucz] || "Nie znam jeszcze odpowiedzi. Naucz mnie: <b>ucz się: pytanie = odpowiedź</b>";
+                        // Sprawdzamy czy tekst zawiera tylko liczby i znaki matematyczne (+, -, *, /, .)
+                        const mathRegex = /^[0-9+\-*/().\s]+$/;
+                        if (mathRegex.test(raw.replace(/,/g, '.'))) {
+                            try {
+                                // Zamieniamy przecinek na kropkę dla komputera
+                                const calculation = raw.replace(/,/g, '.');
+                                const result = eval(calculation);
+                                response = `Obliczyłem to! Wynik to: **${result}**`;
+                            } catch (err) {
+                                response = "To wygląda na matematykę, ale coś jest nie tak z działaniem.";
+                            }
+                        } else {
+                            response = "Nie znam jeszcze odpowiedzi na to pytanie. Naucz mnie!";
+                        }
                     }
                     addMessage(response, false);
                 }, 400);
