@@ -136,18 +136,19 @@
                         const lekcje = wszystkoPoDwukropku.split(";"); // Dzielimy po średniku
                         
                         let licznik = 0;
-                        lekcje.forEach(lekcja => {
-                            const czesci = lekcja.split("=");
-                            if (czesci.length === 2) {
-                                const q = normalizuj(czesci[0]);
-                                const a = czesci[1].trim();
-                                if (q && a) {
-                                    bazaWiedzy[q] = a;
-                                    licznik++;
-                                }
-                            }
-                        });
-
+                       // Bezpieczna wersja masowego uczenia
+lekcje.forEach(lekcja => {
+    if (lekcja.includes("=")) { // Sprawdzamy, czy w ogóle jest znak równości
+        const czesci = lekcja.split("=");
+        const q = normalizuj(czesci[0]);
+        const a = czesci[1] ? czesci[1].trim() : null; // Sprawdzamy, czy jest odpowiedź
+        
+        if (q && a) {
+            bazaWiedzy[q] = a;
+            licznik++;
+        }
+    }
+});
                         if (licznik > 0) {
                             saveMemory();
                             response = `Zakończyłem naukę! Zapamiętałem nowe informacje (${licznik}).`;
