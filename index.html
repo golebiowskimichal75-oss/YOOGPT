@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YOOGPT - Twoja Inteligentna AI</title>
+    <title>YOOGPT - Inteligentna AI z Pamięcią</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f7f7f8;
+            background-color: #1a1a1b; /* Ciemny motyw jak w profesjonalnych AI */
+            color: white;
             margin: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: space-between;
             height: 100vh;
         }
 
@@ -22,73 +22,70 @@
             display: flex;
             flex-direction: column;
             height: 100%;
+            background-color: #1a1a1b;
         }
 
         #header {
-            padding: 20px 0;
+            padding: 20px;
             text-align: center;
-            border-bottom: 1px solid #e5e5e5;
-        }
-
-        h1 {
-            margin: 0;
-            font-size: 2.5rem;
-            color: #333;
+            border-bottom: 1px solid #333;
         }
 
         #chat-container {
             flex-grow: 1;
             padding: 20px;
-            overflow-y: scroll;
+            overflow-y: auto;
             display: flex;
             flex-direction: column;
             gap: 15px;
         }
 
         .message {
-            padding: 10px 15px;
-            border-radius: 18px;
-            max-width: 70%;
-            word-wrap: break-word;
+            padding: 12px 18px;
+            border-radius: 15px;
+            max-width: 80%;
+            line-height: 1.5;
         }
 
         .user-message {
-            background-color: #5c6bc0;
-            color: white;
+            background-color: #2b5278;
             align-self: flex-end;
         }
 
         .ai-message {
-            background-color: white;
-            color: #333;
+            background-color: #2f2f2f;
             align-self: flex-start;
-            border: 1px solid #e5e5e5;
+            border: 1px solid #444;
         }
 
         #input-area {
-            display: flex;
             padding: 20px;
-            background-color: white;
-            border-top: 1px solid #e5e5e5;
-            width: 100%;
-            max-width: 800px;
-            box-sizing: border-box;
+            background-color: #1a1a1b;
+            display: flex;
+            justify-content: center;
         }
 
         input {
-            flex-grow: 1;
-            padding: 12px 20px;
-            border: 1px solid #ccc;
-            border-radius: 25px;
+            width: 100%;
+            padding: 14px 20px;
+            border: 1px solid #444;
+            border-radius: 30px;
+            background-color: #2f2f2f;
+            color: white;
             font-size: 1rem;
             outline: none;
-            transition: border-color 0.2s;
         }
 
         input:focus {
-            border-color: #5c6bc0;
+            border-color: #4a90e2;
         }
 
+        .system-info {
+            font-size: 0.8rem;
+            color: #888;
+            text-align: center;
+            margin-bottom: 5px;
+        }
     </style>
 </head>
 <body>
@@ -96,14 +93,18 @@
     <div id="main-container">
         <div id="header">
             <h1>YOOGPT</h1>
-            <p style="color: #777;">CHATGPT ale lepszy i tak jak u Gemini!</p>
+            <p class="system-info">Moja AI uczy się na stałe!</p>
         </div>
 
         <div id="chat-container">
+            <div class="message ai-message">
+                <b>YOOGPT:</b> Cześć! Pamiętam wszystko, czego mnie nauczysz. <br>
+                Użyj formuły: <b>ucz się: [pytanie] = [odpowiedź]</b>
             </div>
+        </div>
 
         <div id="input-area">
-            <input type="text" id="userInput" placeholder="Zadaj pytanie do YOOGPT...">
+            <input type="text" id="userInput" placeholder="Napisz coś lub naucz mnie...">
         </div>
     </div>
 
@@ -111,12 +112,13 @@
         const input = document.getElementById('userInput');
         const chat = document.getElementById('chat-container');
 
-        // To jest nasza lokalna "pamięć" AI w przeglądarce
-        const pamiec = {
-            "wrocław": "Miasto z krasnalami, bardzo fajne!",
-            "lubisz psy": "Jasne! Są super.",
-            "kto cię stworzył": "Michał Golebiowski na GitHubie!"
-        };
+        // FUNKCJA PAMIĘCI TRWAŁEJ (localStorage)
+        // Pobieramy dane z przeglądarki, a jeśli ich nie ma - zaczynamy z pustą bazą
+        let bazaWiedzy = JSON.parse(localStorage.getItem('yoogpt_brain')) || {};
+
+        function saveMemory() {
+            localStorage.setItem('yoogpt_brain', JSON.stringify(bazaWiedzy));
+        }
 
         function addMessage(text, isUser) {
             const msgDiv = document.createElement('div');
@@ -124,35 +126,53 @@
             msgDiv.classList.add(isUser ? 'user-message' : 'ai-message');
             msgDiv.innerHTML = isUser ? `<b>Ty:</b> ${text}` : `<b>YOOGPT:</b> ${text}`;
             chat.appendChild(msgDiv);
-            chat.scrollTop = chat.scrollHeight; // Automatyczne przewijanie na dół
+            chat.scrollTop = chat.scrollHeight;
         }
 
         input.addEventListener('keypress', function (e) {
             if (e.key === 'Enter' && input.value.trim() !== "") {
-                const userText = input.value.trim();
-                addMessage(userText, true); // Dodaj wiadomość użytkownika
-                input.value = ''; // Wyczyść pole wpisywania
+                const rawText = input.value.trim();
+                const text = rawText.toLowerCase();
+                
+                addMessage(rawText, true);
+                input.value = '';
 
-                // AI "myśli" przez sekundę
                 setTimeout(() => {
                     let response;
-                    const lowercaseText = userText.toLowerCase();
 
-                    if (pamiec[lowercaseText]) {
-                        response = pamiec[lowercaseText];
-                    } else if (lowercaseText.includes("hej") || lowercaseText.includes("cześć")) {
-                        response = "Cześć! O czym chciałbyś porozmawiać?";
-                    } else if (lowercaseText.includes("uczyć się")) {
-                        response = "Oczywiście! Cały czas uczę się nowych rzeczy w zakładce GitHub Actions!";
+                    // LOGIKA UCZENIA: "ucz się: pytanie = odpowiedź"
+                    if (text.startsWith("ucz się:") && text.includes("=")) {
+                        const content = text.replace("ucz się:", "");
+                        const parts = content.split("=");
+                        
+                        if (parts.length === 2) {
+                            const q = parts[0].trim();
+                            const a = parts[1].trim();
+                            bazaWiedzy[q] = a;
+                            saveMemory(); // Zapisujemy w przeglądarce!
+                            response = `Świetnie! Zapamiętałem, że na "${q}" mam odpowiadać: "${a}". Będę to pamiętał nawet po restarcie!`;
+                        } else {
+                            response = "Coś poszło nie tak. Użyj wzoru: ucz się: pytanie = odpowiedź";
+                        }
+                    } 
+                    // SPRAWDZANIE WIEDZY
+                    else if (bazaWiedzy[text]) {
+                        response = bazaWiedzy[text];
+                    } 
+                    // STANDARDOWE REAKCJE
+                    else if (text === "wyczyść pamięć") {
+                        bazaWiedzy = {};
+                        localStorage.removeItem('yoogpt_brain');
+                        response = "Moja pamięć została całkowicie wyczyszczona.";
                     }
                     else {
-                        response = "Interesujące... Zapamiętam to i spróbuję wykorzystać w moim kodzie Pythona na GitHubie!";
+                        response = "Nie znam jeszcze odpowiedzi na to pytanie. Naucz mnie używając: <b>ucz się: pytanie = odpowiedź</b>";
                     }
-                    addMessage(response, false); // Dodaj odpowiedź AI
-                }, 800);
+
+                    addMessage(response, false);
+                }, 500);
             }
         });
-
     </script>
 </body>
 </html>
