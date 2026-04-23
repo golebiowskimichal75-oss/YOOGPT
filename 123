@@ -1,0 +1,17 @@
+name: Automatyczne Uczenie AI
+on: [push] # Uruchom, gdy dodasz jakiekolwiek pliki
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Uruchomienie Pythona
+        run: python model.py
+      - name: Zapisanie postępu
+        run: |
+          git config --global user.name 'GitHub Action'
+          git config --global user.email 'action@github.com'
+          git add wynik_nauki.txt
+          git commit -m "AI douczyło się na podstawie nowych danych" || echo "Brak zmian"
+          git push
