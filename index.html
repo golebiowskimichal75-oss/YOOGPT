@@ -108,16 +108,24 @@
         </div>
     </div>
 
-    <script>
+   <script>
         const input = document.getElementById('userInput');
         const chat = document.getElementById('chat-container');
 
-        // FUNKCJA PAMIĘCI TRWAŁEJ (localStorage)
-        // Pobieramy dane z przeglądarki, a jeśli ich nie ma - zaczynamy z pustą bazą
         let bazaWiedzy = JSON.parse(localStorage.getItem('yoogpt_brain')) || {};
 
         function saveMemory() {
             localStorage.setItem('yoogpt_brain', JSON.stringify(bazaWiedzy));
+        }
+
+        // --- NOWA FUNKCJA: CZYSZCZENIE TEKSTU ---
+        function normalizuj(tekst) {
+            return tekst
+                .toLowerCase()
+                .trim()
+                .replace(/[?.,!]/g, "") // Usuwa znaki interpunkcyjne
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Zamienia ą->a, ś->s itd.
+                .replace(/\s+/g, " "); // Zamienia podwójne spacje na pojedyncze
         }
 
         function addMessage(text, isUser) {
@@ -132,7 +140,9 @@
         input.addEventListener('keypress', function (e) {
             if (e.key === 'Enter' && input.value.trim() !== "") {
                 const rawText = input.value.trim();
-                const text = rawText.toLowerCase();
+                
+                // Normalizujemy to, co wpisał użytkownik
+                const czystyTekst = normalizuj(rawText);
                 
                 addMessage(rawText, true);
                 input.value = '';
@@ -140,33 +150,31 @@
                 setTimeout(() => {
                     let response;
 
-                    // LOGIKA UCZENIA: "ucz się: pytanie = odpowiedź"
-                    if (text.startsWith("ucz się:") && text.includes("=")) {
-                        const content = text.replace("ucz się:", "");
+                    // LOGIKA UCZENIA (tu nie normalizujemy wszystkiego, żeby zachować znaki w odpowiedzi)
+                    if (czystyTekst.startsWith("ucz sie") && rawText.includes("=")) {
+                        const content = rawText.split(":")[1]; 
                         const parts = content.split("=");
                         
                         if (parts.length === 2) {
-                            const q = parts[0].trim();
+                            // Pytanie zapisujemy w formie znormalizowanej (bez ogonków i pytajników)
+                            const q = normalizuj(parts[0]);
                             const a = parts[1].trim();
                             bazaWiedzy[q] = a;
-                            saveMemory(); // Zapisujemy w przeglądarce!
-                            response = `Świetnie! Zapamiętałem, że na "${q}" mam odpowiadać: "${a}". Będę to pamiętał nawet po restarcie!`;
-                        } else {
-                            response = "Coś poszło nie tak. Użyj wzoru: ucz się: pytanie = odpowiedź";
+                            saveMemory();
+                            response = `Zapamiętałem! Teraz zrozumiem pytanie "${q}" nawet z błędami i bez pytajnika.`;
                         }
                     } 
-                    // SPRAWDZANIE WIEDZY
-                    else if (bazaWiedzy[text]) {
-                        response = bazaWiedzy[text];
+                    // SPRAWDZANIE WIEDZY (używamy znormalizowanego tekstu)
+                    else if (bazaWiedzy[czystyTekst]) {
+                        response = bazaWiedzy[czystyTekst];
                     } 
-                    // STANDARDOWE REAKCJE
-                    else if (text === "wyczyść pamięć") {
+                    else if (czystyTekst === "wyczysc pamiec") {
                         bazaWiedzy = {};
                         localStorage.removeItem('yoogpt_brain');
-                        response = "Moja pamięć została całkowicie wyczyszczona.";
+                        response = "Pamięć wyczyszczona.";
                     }
                     else {
-                        response = "Nie znam jeszcze odpowiedzi na to pytanie. Naucz mnie używając: <b>ucz się: pytanie = odpowiedź</b>";
+                        response = "Nie znam odpowiedzi. Naucz mnie: <b>ucz się: pytanie = odpowiedź</b>";
                     }
 
                     addMessage(response, false);
