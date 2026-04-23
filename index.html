@@ -3,46 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YOOGPT - Wersja Stabilna</title>
+    <title>YOOGPT | CHATGPT ale lepszy!!</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #1a1a1b; color: white; display: flex; flex-direction: column; align-items: center; height: 100vh; margin: 0; }
-        
-        /* Styl nagłówka na górze */
-        #header {
-            width: 100%;
-            padding: 30px 0;
-            text-align: center;
-            border-bottom: 1px solid #333;
-            background-color: #1a1a1b;
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background-color: #1a1a1b; 
+            color: white; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
         }
-        #header h1 { margin: 0; font-size: 2.5rem; letter-spacing: 2px; }
-        #header p { margin: 5px 0 0; color: #888; font-size: 1.1rem; }
 
-        #main-container { width: 100%; max-width: 800px; display: flex; flex-direction: column; height: 100%; }
-        #chat-container { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        
-        .message { padding: 12px 16px; border-radius: 20px; max-width: 85%; line-height: 1.4; }
+        /* NAGŁÓWEK Z TWOJEGO PIERWSZEGO SCREENA */
+        #top-header {
+            width: 100%;
+            max-width: 800px;
+            padding: 40px 20px;
+            text-align: left; /* Tak jak na Twoim screenie */
+        }
+        #top-header h1 { 
+            font-size: 32px; 
+            margin: 0; 
+            font-weight: bold;
+        }
+        #top-header p { 
+            font-size: 14px; 
+            color: #ccc; 
+            margin-top: 10px;
+            border-top: 1px solid #333; /* Ta linia pod napisem YOOGPT */
+            padding-top: 15px;
+        }
+
+        #main-container { 
+            width: 100%; 
+            max-width: 800px; 
+            display: flex; 
+            flex-direction: column; 
+            flex-grow: 1;
+            margin-bottom: 20px;
+        }
+
+        #chat-container { 
+            flex-grow: 1; 
+            padding: 20px; 
+            overflow-y: auto; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 12px; 
+        }
+
+        .message { padding: 12px 18px; border-radius: 20px; max-width: 80%; line-height: 1.5; }
         .user-message { background-color: #2b5278; align-self: flex-end; border-bottom-right-radius: 4px; }
         .ai-message { background-color: #2f2f2f; align-self: flex-start; border: 1px solid #444; border-bottom-left-radius: 4px; }
-        
-        #input-area { padding: 20px; display: flex; background: #1a1a1b; border-top: 1px solid #333; }
-        input { width: 100%; padding: 15px 25px; border-radius: 30px; border: 1px solid #444; background: #2f2f2f; color: white; outline: none; font-size: 16px; }
+
+        #input-area { 
+            width: 100%;
+            max-width: 800px;
+            padding: 20px; 
+            display: flex; 
+            background: #1a1a1b; 
+            box-sizing: border-box;
+        }
+
+        input { 
+            width: 100%; 
+            padding: 16px 25px; 
+            border-radius: 30px; 
+            border: 1px solid #444; 
+            background: #2f2f2f; 
+            color: white; 
+            outline: none; 
+            font-size: 16px; 
+        }
         input:focus { border-color: #5c6bc0; }
     </style>
 </head>
 <body>
-    <div id="main-container">
-        <div id="header">
-            <h1>YOOGPT</h1>
-            <p>CHATGPT ale lepszy!!!</p>
-        </div>
 
+    <div id="top-header">
+        <h1>YOOGPT</h1>
+        <p>CHATGPT ale lepszy!!!</p>
+    </div>
+
+    <div id="main-container">
         <div id="chat-container">
-            <div class="message ai-message"><b>YOOGPT:</b> Cześć Michał! System naprawiony i nagłówki dodane. Spróbuj mnie teraz nauczyć kilku rzeczy naraz.</div>
-        </div>
+            </div>
         
         <div id="input-area">
-            <input type="text" id="userInput" placeholder="Ucz mnie: pytanie = odpowiedź...">
+            <input type="text" id="userInput" placeholder="Napisz coś lub naucz mnie (ucz się: pytanie = odpowiedź)...">
         </div>
     </div>
 
@@ -54,9 +104,9 @@
         function normalizuj(t) {
             if (!t) return "";
             return t.toLowerCase().trim()
-                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-                .replace(/[?.,!]/g, "")
-                .replace(/\s+/g, " ");
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // usuwa ą, ś, ć itd.
+                .replace(/[?.,!]/g, "") // usuwa znaki zapytania
+                .replace(/\s+/g, " "); // usuwa podwójne spacje
         }
 
         function addMessage(t, isUser) {
@@ -66,6 +116,9 @@
             chat.appendChild(m);
             chat.scrollTop = chat.scrollHeight;
         }
+
+        // Pierwsza wiadomość powitalna
+        addMessage("System gotowy! Mam nagłówek i pamięć. Czego mnie dzisiaj nauczysz?", false);
 
         input.addEventListener('keypress', function (e) {
             if (e.key === 'Enter' && input.value.trim() !== "") {
@@ -77,6 +130,7 @@
                     let response = "";
                     const nRaw = normalizuj(raw);
 
+                    // Rozpoznaje "ucz się:", "ucz sie:", "UCZ SIE"
                     if (nRaw.startsWith("ucz sie")) {
                         const tresc = raw.includes(":") ? raw.substring(raw.indexOf(":") + 1) : raw.substring(7);
                         const lekcje = tresc.split(";");
@@ -95,7 +149,7 @@
                         });
                         
                         localStorage.setItem('yoogpt_brain', JSON.stringify(bazaWiedzy));
-                        response = `Zrozumiałem! Nauczyłem się ${licznik} nowych rzeczy. Przetestuj mnie!`;
+                        response = `Zrozumiałem! Nauczyłem się ${licznik} nowych rzeczy. Będę o nich pamiętał!`;
                     } 
                     else {
                         const klucz = normalizuj(raw);
